@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>成绩报告生成器</title>
+</head>
+<body>
+    <h2>上传 Excel 成绩表 和 Word 模板：</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <label>Excel 文件：</label>
+        <input type="file" name="excel" required><br><br>
+        <label>Word 模板：</label>
+        <input type="file" name="word" required><br><br>
+        <input type="submit" value="生成 Word 文件并打包下载">
+    </form>
+</body>
+</html>
