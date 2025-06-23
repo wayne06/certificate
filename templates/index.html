@@ -1,16 +1,156 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
-    <title>成绩报告生成器</title>
+  <meta charset="UTF-8">
+  <title>成绩报告生成器</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <style>
+    body {
+      background-color: #f2f5f9;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto; /* 上移整体 */
+      padding: 40px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 26px;
+      color: #333;
+      font-weight: bold; /* 加粗 */
+    }
+
+    .el-upload {
+      width: 100%;
+    }
+
+    .submit-btn {
+      width: 25%; /* 缩短为一半 */
+      margin: 30px auto 0;
+      display: block;
+      background-color: #e0e0e0 !important; 
+      color: #888 !important;
+      border-color: #ccc !important;
+    }
+
+    .submit-btn:hover {
+      background-color: #d5d5d5 !important;
+      color: #666 !important;
+      border-color: #bbb !important;
+    }
+  </style>
 </head>
 <body>
-    <h2>上传 Excel 成绩表 和 Word 模板：</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <label>Excel 文件：</label>
-        <input type="file" name="excel" required><br><br>
-        <label>Word 模板：</label>
-        <input type="file" name="word" required><br><br>
-        <input type="submit" value="生成 Word 文件并打包下载">
-    </form>
+  <div id="app">
+    <div class="container">
+      <div class="title">报告生成器</div>
+
+      <el-form ref="form" :model="formData" label-width="120px" enctype="multipart/form-data">
+        <el-form-item>
+          <el-upload
+            accept=".xls,.xlsx"
+            class="upload-demo"
+            drag
+            action=""
+            :http-request="handleExcelUpload"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="onExcelChange"
+            :file-list="excelFileList">
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">将 Excel 文件拖到此处，或 <em>点击上传</em></div>
+          </el-upload>
+        </el-form-item>
+
+        <el-form-item>
+          <el-upload
+            accept=".docx"
+            class="upload-demo"
+            drag
+            action=""
+            :http-request="handleWordUpload"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="onWordChange"
+            :file-list="wordFileList">
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">将 Word 模板拖到此处，或 <em>点击上传</em></div>
+            <div class="el-upload__text" style="margin-top: 2px; margin-bottom: 0px; font-size: 12px; color: #888;" v-pre> * 模板文件中，需要填入的内容按如下格式修改：姓名： &#123;&#123; 姓名 &#125;&#125;</em></div>
+          </el-upload>
+        </el-form-item> 
+
+        <el-button class="submit-btn" @click="submitForm">生成报告</el-button>
+      </el-form>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          formData: {
+            excel: null,
+            word: null
+          },
+          excelFileList: [],
+          wordFileList: []
+        }
+      },
+      methods: {
+        onExcelChange(file, fileList) {
+          this.formData.excel = file.raw;
+          this.excelFileList = fileList.slice(-1);
+        },
+        onWordChange(file, fileList) {
+          this.formData.word = file.raw;
+          this.wordFileList = fileList.slice(-1);
+        },
+        handleExcelUpload() {},
+        handleWordUpload() {},
+        submitForm() {
+          if (!this.formData.excel || !this.formData.word) {
+            this.$message.error('请上传 Excel 文件和 Word 模板');
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('excel', this.formData.excel);
+          formData.append('word', this.formData.word);
+
+          fetch('/', {
+            method: 'POST',
+            body: formData
+          }).then(res => {
+            if (res.ok) return res.blob();
+            else throw new Error('生成失败');
+          }).then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '成绩报告打包文件.zip';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          }).catch(err => {
+            this.$message.error('生成失败，请重试');
+            console.error(err);
+          });
+        }
+      }
+    });
+  </script>
 </body>
 </html>
